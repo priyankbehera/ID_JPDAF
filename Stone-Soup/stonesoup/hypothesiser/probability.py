@@ -187,7 +187,7 @@ class PDAHypothesiser(Hypothesiser):
         n = meas_pred.ndim
         gate_threshold = cls._gate_threshold(prob_gate, n)
         c_z = np.pi**(n/2) / gamma(n/2 + 1)
-        return c_z * gate_threshold**(n/2) * np.sqrt(det(meas_pred.covar))
+        return c_z * gate_threshold**(n/2) * np.sqrt(np.prod(meas_pred.v))
 
     @staticmethod
     @lru_cache()

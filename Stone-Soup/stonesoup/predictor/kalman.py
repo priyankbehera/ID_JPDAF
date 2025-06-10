@@ -147,17 +147,17 @@ class KalmanPredictor(Predictor):
 
         """
         prior_cov = prior.covar
-        trans_m = self._transition_matrix(prior=prior, time_interval=predict_over_interval,
+        F = self._transition_matrix(prior=prior, time_interval=predict_over_interval,
                                           **kwargs)
-        trans_cov = self.transition_model.covar(time_interval=predict_over_interval, **kwargs)
+        Q = self.transition_model.covar(time_interval=predict_over_interval, **kwargs)
 
         # As this is Kalman-like, the control model must be capable of
         # returning a control matrix (B)
-        ctrl_mat = self._control_matrix(control_input=control_input,
+        Bc = self._control_matrix(control_input=control_input,
                                         time_interval=predict_over_interval, **kwargs)
-        ctrl_noi = self.control_model.control_noise
+        R = self.control_model.control_noise
 
-        return trans_m @ prior_cov @ trans_m.T + trans_cov + ctrl_mat @ ctrl_noi @ ctrl_mat.T
+        return F @ prior_cov @ F.T + Q + Bc @ R @ Bc.T
 
     @predict_lru_cache()
     def predict(self, prior, timestamp=None, control_input=None, **kwargs):
