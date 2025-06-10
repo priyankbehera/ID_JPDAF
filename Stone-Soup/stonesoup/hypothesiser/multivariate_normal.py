@@ -1,4 +1,4 @@
-def logpdf(x, mu, B, v):
+def logpdf(x, B, v):
     """
     Multi‐variate normal log‐pdf in the (B, v) influence‐diagram form.
     Parameters
@@ -15,9 +15,8 @@ def logpdf(x, mu, B, v):
     Returns
     -------
     float
-        log p(x | mu, B, v).
+        log p(x | B, v).
     """
-    diff = x - mu
     I = np.eye(B.shape[0])
     # precision matrix
     Lambda = (I - B).T @ np.diag(1.0 / v) @ (I - B)
@@ -26,6 +25,6 @@ def logpdf(x, mu, B, v):
     log_det = np.sum(np.log(v))
 
     k = x.shape[0]
-    quad = diff.T @ Lambda @ diff
+    quad = x.T @ Lambda @ x
 
     return -0.5 * (log_det + quad + k * np.log(2 * np.pi))

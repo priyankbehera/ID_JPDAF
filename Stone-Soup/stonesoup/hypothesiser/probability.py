@@ -150,7 +150,7 @@ class PDAHypothesiser(Hypothesiser):
             # This is required as log pdf coverts arrays to floats
             log_prob = multivariate_normal.logpdf(
                 (detection.state_vector - measurement_prediction.mean).ravel(),
-                cov=measurement_prediction.covar)
+                measurement_prediction.B, measurement_prediction.v)
             probability = Probability(log_prob, log_value=True)
 
             if measure(measurement_prediction, detection) \
