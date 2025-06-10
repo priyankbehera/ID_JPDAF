@@ -1,6 +1,7 @@
 from functools import lru_cache
 
-from scipy.stats import multivariate_normal, chi2
+import multivariate_normal
+from scipy.stats import chi2
 from scipy.linalg import det
 from scipy.special import gamma
 import numpy as np

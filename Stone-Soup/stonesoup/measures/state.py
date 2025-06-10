@@ -150,13 +150,13 @@ class SquaredMahalanobis(Measure):
 
     This measure returns the Squared Mahalanobis distance between a pair of
     :class:`~.State` objects taking into account the distribution (i.e.
-    the :class:`~.CovarianceMatrix`) of the first :class:`.State` object
+    the :class:`~.B`) and :class:`~.v`)of the first :class:`.State` object
 
     The Squared Mahalanobis distance between a distribution with mean :math:`\mu`
-    and Covariance matrix :math:`\Sigma` and a point :math:`x` is defined as:
+    , B matrix and v vector` and a point :math:`x` is defined as:
 
     .. math::
-            ( {\mu - x})  \Sigma^{-1}  ({\mu - x}^T )
+            ( {x - \mu}^T)(I - B)^T (diagonal[1/v_1, 1/v_2, ..., 1/v_k])  ({\mu - x}^T )
 
 
     """
@@ -209,7 +209,10 @@ class SquaredMahalanobis(Measure):
         else:
             u = state_vector1[:, 0]
             v = state_vector2[:, 0]
-            vi = self._inv_cov(state1)
+            B = state1.B
+            V = state1.v
+            I = np.eye(B.shape[0])
+            vi = (I - B).T @ np.diag(1 / V.flatten()) @ (I - B) 
 
         delta = u - v
 
@@ -220,11 +223,15 @@ class SquaredMahalanobis(Measure):
         if mapping:
             rows = np.array(mapping, dtype=np.intp)
             columns = np.array(mapping, dtype=np.intp)
-            covar = state.covar[rows[:, np.newaxis], columns]
+            B = state.B[rows[:, np.newaxis], columns]
+            v = state.v[rows[:, np.newaxis]]
         else:
-            covar = state.covar
+            B = state.B
+            V = state.v
 
-        return np.linalg.pinv(covar)
+        I = np.eye(B.shape[0])
+        P = (I - B).T @ np.diag(1 / V.flatten()) @ (I - B)
+        return P
 
 
 class Mahalanobis(SquaredMahalanobis):
