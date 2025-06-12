@@ -127,6 +127,7 @@ class KalmanPredictor(Predictor):
 
         return predict_over_interval
 
+    """
     def _predicted_covariance(self, prior, predict_over_interval, control_input=None, **kwargs):
         """Private function to return the predicted covariance. Useful in that
         it can be overwritten in children.
@@ -157,8 +158,9 @@ class KalmanPredictor(Predictor):
                                         time_interval=predict_over_interval, **kwargs)
         R = self.control_model.control_noise
 
-        return F @ prior_cov @ F.T + Q + Bc @ R @ Bc.T
 
+        return F @ prior_cov @ F.T + Q + Bc @ R @ Bc.T
+    """
     @predict_lru_cache()
     def predict(self, prior, timestamp=None, control_input=None, **kwargs):
         r"""The predict function
@@ -183,24 +185,16 @@ class KalmanPredictor(Predictor):
             state covariance :math:`P_{k|k-1}`
 
         """
-
-        # Get the prediction interval
-        predict_over_interval = self._predict_over_interval(prior, timestamp)
-
-        # Prediction of the mean
-        x_pred = self._transition_function(
-            prior, time_interval=predict_over_interval, **kwargs) \
-            + self.control_model.function(control_input, time_interval=predict_over_interval,
-                                          **kwargs)
-
-        # Prediction of the covariance
-        p_pred = self._predicted_covariance(prior, predict_over_interval,
-                                            control_input=control_input,
-                                            **kwargs)
-
-        # And return the state in the correct form
-        return Prediction.from_state(prior, x_pred, p_pred, timestamp=timestamp,
-                                     transition_model=self.transition_model, prior=prior)
+        
+        pred = Prediction.from_state(
+            prior, x_pred, P,
+            timestamp=timestamp,
+            transition_model=self.transition_model,
+            prior=prior
+        )
+        pred.B = B
+        pred.v = v
+        return pred
 
 
 class ExtendedKalmanPredictor(KalmanPredictor):
