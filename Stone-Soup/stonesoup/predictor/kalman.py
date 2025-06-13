@@ -6,6 +6,7 @@ import scipy.linalg as la
 from .idkalman.Mupdate import mupdate
 from .idkalman.Tupdate import tupdate
 from .idkalman.COVtoINF import cov_to_inf
+from .idkalman.INFtoCOV import inf_to_cov
 
 from ..types.array import CovarianceMatrix, StateVector
 from .base import Predictor
@@ -213,9 +214,11 @@ class KalmanPredictor(Predictor):
         # 3. Run tupdate
         x_pred, B_pred, V_pred = tupdate(x_pred, B, V, F, gamma, Q)
         
-        # 4. build prediction object and attach ID params
+        # 4. Convert back to covariance (TODO: Remove or not?)
+        P_pred = inf_to_cov(B_pred, V_pred, n)
+        # 5. build prediction object and attach ID params
         pred = Prediction.from_state(
-            prior, x_pred, P,
+            prior, x_pred, P_pred,
             timestamp=timestamp,
             transition_model=self.transition_model,
             prior=prior,

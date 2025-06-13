@@ -4,6 +4,11 @@ import numpy as np
 import scipy.linalg as la
 from functools import lru_cache
 
+from .idkalman.Mupdate import mupdate
+from .idkalman.Tupdate import tupdate
+from .idkalman.COVtoINF import cov_to_inf
+from .idkalman.INFtoCOV import inf_to_cov
+
 from ..base import Property
 from .base import Updater
 from ..types.array import CovarianceMatrix, StateVector
