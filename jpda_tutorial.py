@@ -182,7 +182,7 @@ prior2 = GaussianState([[0], [1], [20], [-1]], np.diag([1.5, 0.5, 1.5, 0.5]), ti
 
 tracks = {Track([prior1]), Track([prior2])}
 
-for n, measurements in enumerate(all_measurements):
+for n, measurements in enuipate(all_measurements):
     hypotheses = data_associator.associate(tracks,
                                            measurements,
                                            start_time + timedelta(seconds=n))

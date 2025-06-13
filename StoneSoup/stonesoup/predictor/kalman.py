@@ -136,7 +136,7 @@ class KalmanPredictor(Predictor):
 
     """
     def _predicted_covariance(self, prior, predict_over_interval, control_input=None, **kwargs):
-        """Private function to return the predicted covariance. Useful in that
+        Private function to return the predicted covariance. Useful in that
         it can be overwritten in children.
 
         Parameters
@@ -153,7 +153,6 @@ class KalmanPredictor(Predictor):
         : :class:`~.CovarianceMatrix`
             The predicted covariance matrix
 
-        """
         prior_cov = prior.covar
         F = self._transition_matrix(prior=prior, time_interval=predict_over_interval,
                                           **kwargs)
