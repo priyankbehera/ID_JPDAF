@@ -294,9 +294,52 @@ class KalmanUpdater(Updater):
             covariance :math:`P_{x|x}`
 
         """
-        # Get the predicted state out of the hypothesis
-        predicted_state = hypothesis.prediction
+        # 1. Get the predicted state out of the hypothesis
+        pred = hypothesis.prediction
+        meas = hypothesis.measurement
+        Z = meas.state_vector.reshape(-1, 1)
 
+        # 2) Pull out (u_prior, B_prior, V_prior)
+        u_prior = pred.state_vector.reshape(-1, 1)
+        if hasattr(pred, 'B') and hasattr(pred, 'V'):
+            B_prior, V_prior = pred.B, pred.V
+        else:
+            # fall back to converting covariance
+            n = u_prior.shape[0]
+            B_prior, V_prior, _ = cov_to_inf(pred.covar, n)
+
+        # 3) Get H and R from the measurement model
+        meas_model = hypothesis.measurement.measurement_model or self.measurement_model
+        H = meas_model.matrix(**kwargs)
+        R = meas_model.covar(**kwargs)
+
+        # 4) Run your ID‐based mupdate
+        #    Note: you need a time‐index k; if you don't track k, just pass 0 for first-call,
+        #    or maintain a counter in your updater instance.
+        k = getattr(self, '_step_count', 0)
+        u_post, V_post, B_post = mupdate(k, Z, u_prior, B_prior, V_prior, R, H)
+
+         # 5) Convert back to classical covariance if Stone-Soup needs it
+        P_post = inf_to_cov(V_post, B_post, u_post.size)
+
+        # 6) Build and return the Update object
+        update = Update.from_state(
+            hypothesis.prediction,
+            u_post.flatten(),               # posterior mean
+            P_post,                         # posterior covar
+            timestamp=meas.timestamp,
+            hypothesis=hypothesis
+        )
+        # 7) Attach your ID form to the Update
+        update.B = B_post
+        update.V = V_post
+
+        # 8) bump your step counter
+        self._step_count = k + 1
+
+        return update
+
+        """
         # If there is no measurement prediction in the hypothesis then do the
         # measurement prediction (and attach it back to the hypothesis).
         if hypothesis.measurement_prediction is None:
@@ -327,6 +370,7 @@ class KalmanUpdater(Updater):
             hypothesis.prediction,
             posterior_mean, posterior_covariance,
             timestamp=hypothesis.measurement.timestamp, hypothesis=hypothesis)
+        """
 
 
 class ExtendedKalmanUpdater(KalmanUpdater):
