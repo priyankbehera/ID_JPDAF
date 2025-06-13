@@ -3,10 +3,10 @@ from functools import partial
 import numpy as np
 import scipy.linalg as la
 
-from .idkalman.Mupdate import mupdate
-from .idkalman.Tupdate import tupdate
-from .idkalman.COVtoINF import cov_to_inf
-from .idkalman.INFtoCOV import inf_to_cov
+from ..idkalman.Mupdate import mupdate
+from ..idkalman.Tupdate import tupdate
+from ..idkalman.COVtoINF import cov_to_inf
+from ..idkalman.INFtoCOV import inf_to_cov
 
 from ..types.array import CovarianceMatrix, StateVector
 from .base import Predictor
