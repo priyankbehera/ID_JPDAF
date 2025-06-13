@@ -3,9 +3,9 @@ from functools import partial
 import numpy as np
 import scipy.linalg as la
 
-from .Mupdate import mupdate
-from Tupdate import tupdate
-from COVtoINF import cov_to_inf
+from .idkalman.Mupdate import mupdate
+from .idkalman.Tupdate import tupdate
+from .idkalman.COVtoINF import cov_to_inf
 
 from ..types.array import CovarianceMatrix, StateVector
 from .base import Predictor
