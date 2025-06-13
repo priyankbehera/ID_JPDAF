@@ -3,6 +3,9 @@ from functools import partial
 import numpy as np
 import scipy.linalg as la
 
+from Mupdate import mupdate
+from Tupdate import tupdate
+
 from ..types.array import CovarianceMatrix, StateVector
 from .base import Predictor
 from ._utils import predict_lru_cache
@@ -18,7 +21,9 @@ from ..functions import (gauss2sigma, unscented_transform, cubature_transform,
 
 
 class KalmanPredictor(Predictor):
-    r"""A predictor class which forms the basis for the family of Kalman
+    r"""
+    - Altered with ID logic 
+    A predictor class which forms the basis for the family of Kalman
     predictors. This class also serves as the (specific) Kalman Filter
     :class:`~.Predictor` class. Here transition and control models must be linear:
 
@@ -185,15 +190,37 @@ class KalmanPredictor(Predictor):
             state covariance :math:`P_{k|k-1}`
 
         """
+        # 1. predict mean
+        predict_interval = (timestamp - prior.timestamp) if timestamp and prior.timestamp else None
+        x_pred = (
+            self.transition_model.matrix(time_interval=predict_interval, **kwargs) @ prior.state_vector
+            + self.control_model.function(control_input, time_interval=predict_interval, **kwargs)
+        )
+        # 2. convert to ID form 
+        X = prior.covar
+        n = X.shape[0]
+        B, V = cov_to_inf(X, n)
+
+        # 3. Get transition matrix (F) and transition noise (Q)
+        F = self._transition_matrix(prior=prior, time_interval=predict_over_interval,
+                                          **kwargs)
+        Q = self.transition_model.covar(time_interval=predict_over_interval, **kwargs)
+
+        r = Q.shape[0]
+        # Assuming gamma is just identity matrix for simplicity
+        gamma = np.eye(n, r)
+        # 3. Run tupdate
+        u_new, B_new, V_new = tupdate(x_pred, B_new, V_new, F, gamma, Q)
         
+        # 4. build prediction object and attach ID params
         pred = Prediction.from_state(
             prior, x_pred, P,
             timestamp=timestamp,
             transition_model=self.transition_model,
-            prior=prior
+            prior=prior,
         )
-        pred.B = B
-        pred.v = v
+        pred.B = B_new
+        pred.V = V_new
         return pred
 
 
