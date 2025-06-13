@@ -5,6 +5,7 @@ import scipy.linalg as la
 
 from Mupdate import mupdate
 from Tupdate import tupdate
+from COVtoINF import cov_to_inf
 
 from ..types.array import CovarianceMatrix, StateVector
 from .base import Predictor
@@ -199,7 +200,7 @@ class KalmanPredictor(Predictor):
         # 2. convert to ID form 
         X = prior.covar
         n = X.shape[0]
-        B, V = cov_to_inf(X, n)
+        B, V, _ = cov_to_inf(X, n)
 
         # 3. Get transition matrix (F) and transition noise (Q)
         F = self._transition_matrix(prior=prior, time_interval=predict_over_interval,
@@ -210,7 +211,7 @@ class KalmanPredictor(Predictor):
         # Assuming gamma is just identity matrix for simplicity
         gamma = np.eye(n, r)
         # 3. Run tupdate
-        u_new, B_new, V_new = tupdate(x_pred, B_new, V_new, F, gamma, Q)
+        x_pred, B_pred, V_pred = tupdate(x_pred, B, V, F, gamma, Q)
         
         # 4. build prediction object and attach ID params
         pred = Prediction.from_state(
@@ -219,8 +220,8 @@ class KalmanPredictor(Predictor):
             transition_model=self.transition_model,
             prior=prior,
         )
-        pred.B = B_new
-        pred.V = V_new
+        pred.B = B_pred
+        pred.V = V_pred
         return pred
 
 
