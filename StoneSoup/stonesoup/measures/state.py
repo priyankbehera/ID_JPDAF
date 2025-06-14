@@ -210,7 +210,7 @@ class SquaredMahalanobis(Measure):
             u = state_vector1[:, 0]
             v = state_vector2[:, 0]
             B = state1.B
-            V = state1.v
+            V = state1.V
             I = np.eye(B.shape[0])
             vi = (I - B).T @ np.diag(1 / V.flatten()) @ (I - B) 
 

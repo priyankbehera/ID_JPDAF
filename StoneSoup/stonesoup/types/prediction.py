@@ -134,7 +134,6 @@ class GaussianMeasurementPrediction(MeasurementPrediction, GaussianState):
 
     cross_covar: CovarianceMatrix = Property(
         default=None, doc="The state-measurement cross covariance matrix")
-
     B: np.ndarray = Property(
         default=None, doc="ID‐form arc‐coefficient matrix for the measurement node")
     V: np.ndarray = Property(
