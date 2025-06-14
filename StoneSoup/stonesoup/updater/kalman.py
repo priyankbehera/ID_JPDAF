@@ -9,6 +9,7 @@ from ..idkalman.Tupdate import tupdate
 from ..idkalman.COVtoINF import cov_to_inf
 from ..idkalman.INFtoCOV import inf_to_cov
 
+
 from ..base import Property
 from .base import Updater
 from ..types.array import CovarianceMatrix, StateVector
@@ -270,8 +271,21 @@ class KalmanUpdater(Updater):
         innov_cov = self._innovation_covariance(
             meas_cross_cov, hh, measurement_model, measurement_noise, **kwargs)
 
-        return MeasurementPrediction.from_state(
-            predicted_state, pred_meas, innov_cov, cross_covar=meas_cross_cov)
+        # 2) convert the measurement‐noise covariance R → ID form
+        #    R is meas_mod.covar(**kwargs), and p = dimension of measurement
+        p = innov_cov.shape[0]
+        B_meas, V_meas, _ = cov_to_inf(measurement_model.covar(**kwargs), p)
+
+        # 3) build the base MeasurementPrediction
+        pred_meas = MeasurementPrediction.from_state(
+        predicted_state,
+        pred_meas,          
+        innov_cov,
+        cross_covar=meas_cross_cov
+        )
+        pred_meas.B = B_meas
+        pred_meas.V = V_meas
+        return pred_meas
 
     def update(self, hypothesis, **kwargs):
         r"""The Kalman update method. Given a hypothesised association between

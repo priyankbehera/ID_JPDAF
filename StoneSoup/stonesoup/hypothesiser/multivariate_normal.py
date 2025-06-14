@@ -1,3 +1,5 @@
+import numpy as np
+
 def logpdf(x, B, v):
     """
     Multi‐variate normal log‐pdf in the (B, v) influence‐diagram form.

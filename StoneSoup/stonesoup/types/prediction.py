@@ -140,7 +140,9 @@ class GaussianMeasurementPrediction(MeasurementPrediction, GaussianState):
     v: np.ndarray = Property(
         default=None, doc="ID‐form conditional variances for the measurement")
 
-    def __init__(self, *args, B=None, V=None **kwargs):
+    def __init__(self, *args, **kwargs):
+        B = kwargs.pop("B", None)
+        V = kwargs.pop("V", None)
         super().__init__(*args, **kwargs)
         if self.cross_covar is not None \
                 and self.cross_covar.shape[1] != self.state_vector.shape[0]:
@@ -148,7 +150,7 @@ class GaussianMeasurementPrediction(MeasurementPrediction, GaussianState):
                              "columns as the number of rows in state_vector")\
         
         self.B = B
-        self.v = v
+        self.V = V
     
 
 
