@@ -1,15 +1,19 @@
+import sys, os
+
+ROOT = os.path.expanduser('~/Desktop/ID_JPDAF')
+# 1) Make the parent folder itself importable, so that
+#    Python can find BOTH StoneSoup/ and StoneSoupID/ under it:
+sys.path.insert(0, ROOT)
+
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
-import sys, os
-sys.path.insert(0, os.path.expanduser('~/Desktop/ID_JPDAF/StoneSoup'))
-
 # --- Imports for your ID-JPDAF ---
-from StoneSoupID.stonesoup.predictor.kalman import KalmanPredictor as ID_KalmanPredictor
-from StoneSoupID.stonesoup.updater.kalman   import KalmanUpdater   as ID_KalmanUpdater
-from StoneSoupID.stonesoup.hypothesiser.probability import PDAHypothesiser as ID_PDAHypo
-from StoneSoupID.stonesoup.dataassociator.probability import JPDA            as ID_JPDA
+from StoneSoupID.stonesoupID.predictor.kalman import KalmanPredictor as ID_KalmanPredictor
+from StoneSoupID.stonesoupID.updater.kalman   import KalmanUpdater   as ID_KalmanUpdater
+from StoneSoupID.stonesoupID.hypothesiser.probability import PDAHypothesiser as ID_PDAHypo
+from StoneSoupID.stonesoupID.dataassociator.probability import JPDA            as ID_JPDA
 
 # --- Imports for the standard JPDAF ---
 from stonesoup.predictor.kalman       import KalmanPredictor   as Std_KalmanPredictor
