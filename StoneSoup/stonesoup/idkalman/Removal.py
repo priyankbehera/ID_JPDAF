@@ -1,5 +1,5 @@
 import numpy as np
-from Reversal import reversal
+from .Reversal import reversal
 
 def removal(B, V, n0, n1, n2):
     """

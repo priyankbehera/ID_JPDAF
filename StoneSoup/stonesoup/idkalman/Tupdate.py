@@ -1,7 +1,7 @@
 import numpy as np
-from COVtoINF import cov_to_inf
-from Removal import removal
-from INFtoCOV import inf_to_cov
+from .COVtoINF import cov_to_inf
+from .Removal import removal
+from .INFtoCOV import inf_to_cov
 
 def tupdate(u, B, V, Phi, gamma, Qk):
     """

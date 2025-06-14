@@ -1,7 +1,7 @@
 import numpy as np
-from COVtoINF import cov_to_inf
-from Evidence import evidence
-from INFtoCOV import inf_to_cov
+from .COVtoINF import cov_to_inf
+from .Evidence import evidence
+from .INFtoCOV import inf_to_cov
 
 def mupdate(k, Z, u, B_or_sigma, V, R, H, h=None):
     """
