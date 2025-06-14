@@ -1,12 +1,6 @@
-import sys, os
-
-ROOT = os.path.expanduser('~/Desktop/ID_JPDAF')
-# 1) Make the parent folder itself importable, so that
-#    Python can find BOTH StoneSoup/ and StoneSoupID/ under it:
-sys.path.insert(0, ROOT)
-
 import numpy as np
-import matplotlib.pyplot as plt
+import stonesoup
+import matplotlib.pyplot as plte
 from datetime import datetime, timedelta
 
 # --- Imports for your ID-JPDAF ---
