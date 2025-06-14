@@ -8,6 +8,7 @@
 """
 
 # %%
+# NOTE: This uses Influence Diagram Approach 
 # When we have multiple targets we're going to want to arrive at a globally-consistent collection
 # of associations for PDA, in much the same way as we did for the global nearest neighbour
 # associator. This is the purpose of the *joint* probabilistic data association (JPDA) filter.
