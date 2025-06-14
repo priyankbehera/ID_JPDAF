@@ -214,7 +214,7 @@ class KalmanPredictor(Predictor):
         x_pred, B_pred, V_pred = tupdate(x_pred, B, V, F, gamma, Q)
         
         # 4. Convert back to covariance (TODO: Remove or not?)
-        P_pred = inf_to_cov(B_pred, V_pred, n)
+        P_pred = inf_to_cov(V_pred, B_pred, n)
         # 5. build prediction object and attach ID params
         pred = Prediction.from_state(
             prior, x_pred, P_pred,

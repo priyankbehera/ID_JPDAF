@@ -1,6 +1,7 @@
 import datetime
 import weakref
 from collections.abc import Sequence
+import numpy as np
 
 from .array import CovarianceMatrix
 from .base import Type
@@ -134,12 +135,21 @@ class GaussianMeasurementPrediction(MeasurementPrediction, GaussianState):
     cross_covar: CovarianceMatrix = Property(
         default=None, doc="The state-measurement cross covariance matrix")
 
-    def __init__(self, *args, **kwargs):
+    B: np.ndarray = Property(
+        default=None, doc="ID‐form arc‐coefficient matrix for the measurement node")
+    v: np.ndarray = Property(
+        default=None, doc="ID‐form conditional variances for the measurement")
+
+    def __init__(self, *args, B=None, V=None **kwargs):
         super().__init__(*args, **kwargs)
         if self.cross_covar is not None \
                 and self.cross_covar.shape[1] != self.state_vector.shape[0]:
             raise ValueError("cross_covar should have the same number of "
-                             "columns as the number of rows in state_vector")
+                             "columns as the number of rows in state_vector")\
+        
+        self.B = B
+        self.v = v
+    
 
 
 # Don't need to support Sqrt Covar for MeasurementPrediction
