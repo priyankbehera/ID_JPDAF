@@ -70,12 +70,12 @@ from datetime import timedelta
 import numpy as np
 from scipy.stats import uniform
 
-from StoneSoup.stonesoup.models.transition.linear import CombinedLinearGaussianTransitionModel, \
+from StoneSoupID.stonesoup.models.transition.linear import CombinedLinearGaussianTransitionModel, \
                                                ConstantVelocity
-from StoneSoup.stonesoup.types.groundtruth import GroundTruthPath, GroundTruthState
-from StoneSoup.stonesoup.types.detection import TrueDetection
-from StoneSoup.stonesoup.types.detection import Clutter
-from StoneSoup.stonesoup.models.measurement.linear import LinearGaussian
+from StoneSoupID.stonesoup.types.groundtruth import GroundTruthPath, GroundTruthState
+from StoneSoupID.stonesoup.types.detection import TrueDetection
+from StoneSoupID.stonesoup.types.detection import Clutter
+from StoneSoupID.stonesoup.models.measurement.linear import LinearGaussian
 
 np.random.seed(1991)
 
@@ -100,7 +100,7 @@ for k in range(1, 21):
 truths.add(truth)
 
 # Plot ground truth.
-from StoneSoup.stonesoup.plotter import Plotter
+from StoneSoupID.stonesoup.plotter import Plotter
 plotter = Plotter()
 plotter.ax.set_ylim(0, 25)
 plotter.plot_ground_truths(truths, [0, 2])
@@ -143,11 +143,11 @@ for k in range(20):
 plotter.plot_measurements(all_measurements, [0, 2], color='g')
 
 # %%
-from StoneSoup.stonesoup.predictor.kalman import KalmanPredictor
+from StoneSoupID.stonesoup.predictor.kalman import KalmanPredictor
 predictor = KalmanPredictor(transition_model)
 
 # %%
-from StoneSoup.stonesoup.updater.kalman import KalmanUpdater
+from StoneSoupID.stonesoup.updater.kalman import KalmanUpdater
 updater = KalmanUpdater(measurement_model)
 
 # %%
@@ -157,7 +157,7 @@ updater = KalmanUpdater(measurement_model)
 # Unlike the :class:`~.PDA` data associator, in Stone Soup, the :class:`~.JPDA` associator takes
 # this collection of hypotheses and adjusts their weights according to the method described above,
 # before returning key-value pairs of tracks and detections to be associated with them.
-from StoneSoup.stonesoup.hypothesiser.probability import PDAHypothesiser
+from StoneSoupID.stonesoup.hypothesiser.probability import PDAHypothesiser
 # This doesn't need to be created again, but for the sake of visualising the process, it has been
 # added.
 hypothesiser = PDAHypothesiser(predictor=predictor,
@@ -165,18 +165,18 @@ hypothesiser = PDAHypothesiser(predictor=predictor,
                                clutter_spatial_density=0.125,
                                prob_detect=prob_detect)
 
-from StoneSoup.stonesoup.dataassociator.probability import JPDA
+from StoneSoupID.stonesoup.dataassociator.probability import JPDA
 data_associator = JPDA(hypothesiser=hypothesiser)
 
 # %%
 # Running the JPDA filter
 # -----------------------
 
-from StoneSoup.stonesoup.types.state import GaussianState
-from StoneSoup.stonesoup.types.track import Track
-from StoneSoup.stonesoup.types.array import StateVectors
-from StoneSoup.stonesoup.functions import gm_reduce_single
-from StoneSoup.stonesoup.types.update import GaussianStateUpdate
+from StoneSoupID.stonesoup.types.state import GaussianState
+from StoneSoupID.stonesoup.types.track import Track
+from StoneSoupID.stonesoup.types.array import StateVectors
+from StoneSoupID.stonesoup.functions import gm_reduce_single
+from StoneSoupID.stonesoup.types.update import GaussianStateUpdate
 
 prior1 = GaussianState([[0], [1], [0], [1]], np.diag([1.5, 0.5, 1.5, 0.5]), timestamp=start_time)
 prior2 = GaussianState([[0], [1], [20], [-1]], np.diag([1.5, 0.5, 1.5, 0.5]), timestamp=start_time)
