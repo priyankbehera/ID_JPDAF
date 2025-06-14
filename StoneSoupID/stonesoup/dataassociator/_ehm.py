@@ -1,5 +1,5 @@
 import numpy as np
-from stonesoup.types.numeric import Probability
+from ..types.numeric import Probability
 
 
 class EHMTree:
