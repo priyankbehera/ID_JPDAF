@@ -64,6 +64,7 @@
 # positive x, y cartesian plane (intersecting approximately half-way through their transition).
 # We then add truth detections with clutter at each time-step.
 
+import matplotlib.pyplot as plt
 from datetime import datetime
 from datetime import timedelta
 import numpy as np
@@ -220,6 +221,8 @@ for n, measurements in enumerate(all_measurements):
 
 plotter.plot_tracks(tracks, [0, 2], uncertainty=True)
 plotter.fig
+plt.show()
+
 
 # %%
 # References
