@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
+import sys, os
+sys.path.insert(0, os.path.expanduser('~/Desktop/ID_JPDAF/StoneSoup'))
+
 # --- Imports for your ID-JPDAF ---
 from StoneSoupID.stonesoup.predictor.kalman import KalmanPredictor as ID_KalmanPredictor
 from StoneSoupID.stonesoup.updater.kalman   import KalmanUpdater   as ID_KalmanUpdater
