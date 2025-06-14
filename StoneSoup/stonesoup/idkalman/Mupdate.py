@@ -32,6 +32,8 @@ def mupdate(k, Z, u, B_or_sigma, V, R, H, h=None):
 
     if k == 0:
         B, V, P = cov_to_inf(B_or_sigma, domain)
+    else:
+        B = B_or_sigma
 
 
     # Prepare intermediate values for update
@@ -45,7 +47,7 @@ def mupdate(k, Z, u, B_or_sigma, V, R, H, h=None):
 
 
     # Construct V_new to structure
-    V_new = np.vstack((V, np.diag(R).reshape(-1, 1)))
+    V_new = np.vstack((V.reshape(-1, 1), np.diag(R).reshape(-1, 1)))
 
 
     # Build the B_new matrix

@@ -19,12 +19,6 @@ def logpdf(x, B, V):
     float
         log p(x | B, V).
     """
-    print(x)
-    print(B)
-    print(V)
-    print(np.diag(1.0 / V))
-    print(np.diagflat(1.0 / V))
-
     I = np.eye(B.shape[0])
     # precision matrix
     Lambda = (I - B).T @ np.diagflat(1.0 / V) @ (I - B)
