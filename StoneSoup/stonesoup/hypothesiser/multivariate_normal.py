@@ -1,6 +1,6 @@
 import numpy as np
 
-def logpdf(x, B, v):
+def logpdf(x, B, V):
     """
     Multi‐variate normal log‐pdf in the (B, v) influence‐diagram form.
     Parameters
@@ -11,20 +11,20 @@ def logpdf(x, B, v):
         The mean vector.
     B : (k,k) array
         The ID arc‐coefficient matrix.
-    v : (k,) array
+    V : (k,) array
         The conditional variances.
 
     Returns
     -------
     float
-        log p(x | B, v).
+        log p(x | B, V).
     """
     I = np.eye(B.shape[0])
     # precision matrix
-    Lambda = (I - B).T @ np.diag(1.0 / v) @ (I - B)
+    Lambda = (I - B).T @ np.diag(1.0 / V) @ (I - B)
 
     # log determinant of Sigma_ID is sum log v_i
-    log_det = np.sum(np.log(v))
+    log_det = np.sum(np.log(V))
 
     k = x.shape[0]
     quad = x.T @ Lambda @ x
