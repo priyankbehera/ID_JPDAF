@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-import multivariate_normal
+from .multivariate_normal import logpdf
 from scipy.stats import chi2
 from scipy.linalg import det
 from scipy.special import gamma

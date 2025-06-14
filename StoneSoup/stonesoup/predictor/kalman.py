@@ -203,9 +203,9 @@ class KalmanPredictor(Predictor):
         B, V, _ = cov_to_inf(X, n)
 
         # 3. Get transition matrix (F) and transition noise (Q)
-        F = self._transition_matrix(prior=prior, time_interval=predict_over_interval,
+        F = self._transition_matrix(prior=prior, time_interval=predict_interval,
                                           **kwargs)
-        Q = self.transition_model.covar(time_interval=predict_over_interval, **kwargs)
+        Q = self.transition_model.covar(time_interval=predict_interval, **kwargs)
 
         r = Q.shape[0]
         # Assuming gamma is just identity matrix for simplicity
