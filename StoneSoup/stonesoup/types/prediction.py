@@ -137,7 +137,7 @@ class GaussianMeasurementPrediction(MeasurementPrediction, GaussianState):
 
     B: np.ndarray = Property(
         default=None, doc="ID‐form arc‐coefficient matrix for the measurement node")
-    v: np.ndarray = Property(
+    V: np.ndarray = Property(
         default=None, doc="ID‐form conditional variances for the measurement")
 
     def __init__(self, *args, **kwargs):

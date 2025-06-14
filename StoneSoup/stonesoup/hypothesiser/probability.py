@@ -150,7 +150,7 @@ class PDAHypothesiser(Hypothesiser):
             # This is required as log pdf coverts arrays to floats
             log_prob = logpdf(
                 (detection.state_vector - measurement_prediction.mean).ravel(),
-                measurement_prediction.B, measurement_prediction.v)
+                measurement_prediction.B, measurement_prediction.V)
             probability = Probability(log_prob, log_value=True)
 
             if measure(measurement_prediction, detection) \

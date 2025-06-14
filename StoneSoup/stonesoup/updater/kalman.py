@@ -274,7 +274,7 @@ class KalmanUpdater(Updater):
         # 2) convert the measurement‐noise covariance R → ID form
         #    R is meas_mod.covar(**kwargs), and p = dimension of measurement
         p = innov_cov.shape[0]
-        B_meas, V_meas, _ = cov_to_inf(measurement_model.covar(**kwargs), p)
+        B_meas, V_meas, _ = cov_to_inf(innov_cov, p)
 
         # 3) build the base MeasurementPrediction
         pred_meas = MeasurementPrediction.from_state(
