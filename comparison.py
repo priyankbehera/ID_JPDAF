@@ -14,10 +14,92 @@ from stonesoup.predictor.kalman       import KalmanPredictor   as Std_KalmanPred
 from stonesoup.updater.kalman         import KalmanUpdater     as Std_KalmanUpdater
 from stonesoup.hypothesiser.probability import PDAHypothesiser as Std_PDAHypo
 from stonesoup.dataassociator.probability import JPDA            as Std_JPDA
+from stonesoup.models.transition.linear import CombinedLinearGaussianTransitionModel, ConstantVelocity
+from stonesoup.types.groundtruth import GroundTruthPath, GroundTruthState
+from stonesoup.types.detection import TrueDetection, Clutter
+from stonesoup.models.measurement.linear import LinearGaussian
+from scipy.stats import uniform
 
 from stonesoup.types.state import GaussianState
 from stonesoup.types.track import Track
 from stonesoup.functions import gm_reduce_single
+
+
+def simulate_scenario(clutter_density, prob_detect, meas_noise_var, start_time, steps=20):
+    """
+    Returns:
+      truths:   [GroundTruthPath, …]  (one per target)
+      measurements:  list of sets of Detection  (length == steps)
+    """
+    # 1) build two ground‐truth tracks just like your tutorial
+    transition_model = CombinedLinearGaussianTransitionModel([
+        ConstantVelocity(0.005), ConstantVelocity(0.005)
+    ])
+
+    # first target
+    truth1 = GroundTruthPath([
+        GroundTruthState([0,1,0,1], timestamp=start_time)
+    ])
+    for k in range(1, steps):
+        truth1.append(GroundTruthState(
+            transition_model.function(truth1[k-1], noise=True,
+                                      time_interval=timedelta(seconds=1)),
+            timestamp=start_time + timedelta(seconds=k)
+        ))
+
+    # second target
+    truth2 = GroundTruthPath([
+        GroundTruthState([0,1,20,-1], timestamp=start_time)
+    ])
+    for k in range(1, steps):
+        truth2.append(GroundTruthState(
+            transition_model.function(truth2[k-1], noise=True,
+                                      time_interval=timedelta(seconds=1)),
+            timestamp=start_time + timedelta(seconds=k)
+        ))
+
+    truths = [truth1, truth2]
+
+    # 2) generate measurements + clutter
+    measurement_model = LinearGaussian(
+        ndim_state=4, mapping=(0,2),
+        noise_covar=np.eye(2)*meas_noise_var
+    )
+
+    all_measurements = []
+    for k in range(steps):
+        tstamp = start_time + timedelta(seconds=k)
+        meas_set = set()
+
+        # true detections
+        for truth in truths:
+            if np.random.rand() <= prob_detect:
+                z = measurement_model.function(truth[k], noise=True)
+                meas_set.add(TrueDetection(
+                    state_vector=z,
+                    groundtruth_path=truth,
+                    timestamp=tstamp,
+                    measurement_model=measurement_model
+                ))
+
+        # clutter
+        for truth in truths:
+            x0, _, y0, _ = truth[k].state_vector.ravel()
+            # sample Poisson number of clutters with mean=clutter_density*area
+            n_clutter = np.random.poisson(clutter_density * 100)  # tune '100' to your scene size
+            for _ in range(n_clutter):
+                x = uniform.rvs(x0-10, 20)
+                y = uniform.rvs(y0-10, 20)
+                meas_set.add(Clutter(
+                    np.array([[x],[y]]),
+                    timestamp=tstamp,
+                    measurement_model=measurement_model
+                ))
+
+        all_measurements.append(meas_set)
+
+    return truths, all_measurements
+
 
 def run_single_trial(seed, clutter_density, prob_detect, meas_noise_var):
     np.random.seed(seed)
