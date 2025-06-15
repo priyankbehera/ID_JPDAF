@@ -128,7 +128,8 @@ class PDAHypothesiser(Hypothesiser):
         measure = SquaredMahalanobis(state_covar_inv_cache_size=None)
 
         # Common state & measurement prediction
-        prediction = self.predictor.predict(track, timestamp=timestamp, **kwargs)
+        prior_state = track[-1]
+        prediction = self.predictor.predict(prior_state, timestamp=timestamp, **kwargs)
         # Missed detection hypothesis
         probability = Probability(1 - self.prob_detect*self.prob_gate)
         hypotheses.append(
