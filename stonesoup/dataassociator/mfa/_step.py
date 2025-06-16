@@ -41,8 +41,8 @@ def _get2dCostMatrix(c_hat, time_step_indices: TimeStepIndices, track_count, mea
     nullCost = np.full((track_count,), np.inf)
     # store index of the single target hypothesis with the minimum cost for
     # each track and measurement
-    idxCost = np.full((track_count, measurement_count), -1, dtype=np.int32)
-    idxNullCost = np.full((track_count,), -1, dtype=np.int32)
+    idxCost = np.full((track_count, measurement_count), -1, dtype=int)
+    idxNullCost = np.full((track_count,), -1, dtype=int)
     for track_id, trackNull_index_for_track in enumerate(time_step_indices.trackNull_index):
         if len(trackNull_index_for_track):
             min_index = c_hat[trackNull_index_for_track].argmin()
@@ -62,7 +62,7 @@ def _get2dCostMatrix(c_hat, time_step_indices: TimeStepIndices, track_count, mea
 
     # Create cost matrix for nulls with null costs on diagonal and inf
     # elsewhere (so we can have any number of null assignments)
-    nullCostMatrix = np.full((track_count, track_count), np.inf, dtype=np.float64)
+    nullCostMatrix = np.full((track_count, track_count), np.inf, dtype=float)
     # Pick out diagonal entries (like np.diagonal, but this is a writable view)
     nullCostMatrix.ravel()[::track_count + 1] = nullCost
 
@@ -177,7 +177,7 @@ class AlgorithmState:
         """Initialises the algorithm state, for use before the algorithm runs"""
         return AlgorithmState(
             # Lagrange multiplier \delta is initialised with 0
-            delta=np.zeros((slide_window, hyp_count), dtype=np.float64),
+            delta=np.zeros((slide_window, hyp_count), dtype=float),
             # subproblem solutions
             u_hat=np.zeros((slide_window, hyp_count), dtype=np.bool_),
             # store the best feasible primal cost obtained so far (upper bound)
@@ -199,7 +199,7 @@ def algorithm_step(
 ):
     slide_window = state.delta.shape[0]
     # get suboptimal solution for each subproblem
-    sub_dual_cost = np.zeros((slide_window,), dtype=np.float64)
+    sub_dual_cost = np.zeros((slide_window,), dtype=float)
     for k in range(slide_window):
         c_hat, assignedHypotheses = _getSuboptimalSolutionForSubproblem(
             state.delta[k], hyp_info.all_costs, hyp_info.time_step_indices[k], slide_window
