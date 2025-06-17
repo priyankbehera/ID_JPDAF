@@ -2,7 +2,15 @@
 """ run_mot_challenge.py
 
 Run example:
-run_mot_challenge.py --USE_PARALLEL False --METRICS Hota --TRACKERS_TO_EVAL Lif_T
+
+python3 scripts/run_mot_challenge.py \
+  --BENCHMARK MOT17 \
+  --SPLIT_TO_EVAL train \
+  --TRACKERS_TO_EVAL MPNTrack \
+  --METRICS HOTA \
+  --USE_PARALLEL False \
+  --NUM_PARALLEL_CORES 1
+
 
 Command Line Arguments: Defaults, # Comments
     Eval arguments:
