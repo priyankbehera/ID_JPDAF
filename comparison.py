@@ -1,13 +1,13 @@
 """
-jpdaf_radar_benchmark.py  (Stone Soup ≥ v1.6)
+jpdaf_radar_benchmark.py  (Stone Soup ≥ v1.6)
 ================================================
-Pure‑Python Monte‑Carlo benchmark for **vanilla JPDAF** on radar‑style
+Pure-Python Monte-Carlo benchmark for **vanilla JPDAF** on radar-style
 simulations.  It sweeps across (#targets, clutter density, PD) and saves
-RMS, OSPA, SIAP IDC and runtime to a CSV.
+RMS, OSPA, SIAP IDC and runtime to a CSV.
 
-Run »  ``python comparison.py --out radar_benchmark.csv``
+Run »  ``python comparison.py --out radar_benchmark.csv``
 
-Requires:  Stone Soup >= 1.6, numpy, pandas, tqdm.
+Requires:  Stone Soup >= 1.6, numpy, pandas, tqdm.
 """
 from __future__ import annotations
 
