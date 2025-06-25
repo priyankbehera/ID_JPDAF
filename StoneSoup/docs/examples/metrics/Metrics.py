@@ -248,7 +248,7 @@ plotter = Plotterly()
 plotter.plot_ground_truths(truths, [0, 2])
 plotter.plot_measurements(detections, [0, 2])
 plotter.plot_sensors(sensor)
-plotter.fig
+plotter.fig.show()
 
 # %%
 # Create and run the trackers
