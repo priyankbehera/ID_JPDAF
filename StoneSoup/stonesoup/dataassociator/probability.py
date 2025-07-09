@@ -55,7 +55,8 @@ class JPDA(DataAssociator):
     takes place in the function :meth:`enumerate_JPDA_hypotheses`.
     """
 
-    hypothesiser: PDAHypothesiser = Property(
+    hypothesiser: 
+    iser = Property(
         doc="Generate a set of hypotheses for each prediction-detection pair")
 
     def associate(self, tracks, detections, timestamp, **kwargs):
