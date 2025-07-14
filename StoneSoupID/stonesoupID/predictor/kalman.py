@@ -310,6 +310,60 @@ class ExtendedKalmanPredictor(KalmanPredictor):
             return self.control_model.matrix(**kwargs)
         else:
             return self.control_model.jacobian(control_input, **kwargs)
+        
+    def predict(self, prior, timestamp=None, control_input=None, **kwargs):
+        # 1) timestamp
+        dt = (timestamp - prior.timestamp) if (timestamp and prior.timestamp) else None
+        kwargs.setdefault('time_interval', dt)
+
+        # 2) convert prior covariance into ID form
+        P_prior = prior.covar
+        n = P_prior.shape[0]
+        B_prior, V_prior, _ = cov_to_inf(P_prior, n)
+
+        # 3) nonlinear transition:
+        #    a) mean: f(u_prior)
+        f = self.transition_model.function(prior, **kwargs)
+        #    b) control bias (if any)
+        b = self.control_model.function(control_input, **kwargs)
+
+        x_pred = (np.asarray(f) + np.asarray(b)).reshape((-1, 1))
+
+        # 4) Jacobians for ID-update:
+        #    a) F = ∂f/∂x
+        F = self.transition_model.jacobian(prior, **kwargs)
+        #    b) Γ = ∂b/∂u   and process noise Q
+        Gamma = ( self.control_model.jacobian(control_input, **kwargs)
+                  if not isinstance(self.control_model, LinearModel)
+                  else self.control_model.matrix(**kwargs) )
+        Q = self.transition_model.covar(**kwargs)
+
+        # 5) influence-diagram transition update
+        x_pred, B_pred, V_pred = tupdate(
+            x_pred.reshape(-1,1),
+            B_prior,
+            V_prior,
+            F,
+            Gamma,
+            Q
+        )
+
+        # 6) back to covariance form
+        P_pred = inf_to_cov(V_pred, B_pred, n)
+
+        # 7) wrap in a Prediction object
+        pred = Prediction.from_state(
+            prior,
+            x_pred.flatten(),
+            P_pred,
+            timestamp=timestamp,
+            transition_model=self.transition_model,
+            control_input=control_input
+        )
+        pred.B = B_pred
+        pred.V = V_pred
+
+        return pred
 
 
 class UnscentedKalmanPredictor(KalmanPredictor):

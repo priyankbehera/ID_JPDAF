@@ -144,12 +144,12 @@ for k in range(20):
 plotter.plot_measurements(all_measurements, [0, 2], color='g')
 
 # %%
-from StoneSoupID.stonesoupID.predictor.kalman import KalmanPredictor
-predictor = KalmanPredictor(transition_model)
+from StoneSoup.stonesoup.predictor.kalman import ExtendedKalmanPredictor
+predictor = ExtendedKalmanPredictor(transition_model)
 
 # %%
-from StoneSoupID.stonesoupID.updater.kalman import KalmanUpdater
-updater = KalmanUpdater(measurement_model)
+from StoneSoup.stonesoup.updater.kalman import ExtendedKalmanUpdater
+updater = ExtendedKalmanUpdater(measurement_model)
 
 # %%
 # Initial hypotheses are calculated (per track) in the same manner as the PDA.

@@ -278,10 +278,10 @@ class KalmanUpdater(Updater):
 
         # 3) build the base MeasurementPrediction
         pred_meas = MeasurementPrediction.from_state(
-        predicted_state,
-        pred_meas,          
-        innov_cov,
-        cross_covar=meas_cross_cov
+            predicted_state,
+            pred_meas,          
+            innov_cov,
+            cross_covar=meas_cross_cov
         )
         pred_meas.B = B_meas
         pred_meas.V = V_meas
@@ -436,6 +436,54 @@ class ExtendedKalmanUpdater(KalmanUpdater):
             if linearisation_point is None:
                 linearisation_point = predicted_state
             return measurement_model.jacobian(linearisation_point, **kwargs)
+        
+    def update(self, hypothesis, *kwargs):
+        # 1) Unpack prediction and measurement
+        pred = hypothesis.prediction
+        meas = hypothesis.measurement
+
+        u_prior = pred.state_vector.reshape(-1,1)
+        if hasattr(pred, 'B') and hasattr(pred, 'V'):
+            B_prior, V_prior = pred.B, pred.V
+        else:
+            n = u_prior.shape[0]
+            B_prior, V_prior, _ = cov_to_inf(pred.covar, n)
+
+        # 3) Nonlinear measurement model
+        meas_model = meas.measurement_model or self.measurement_model
+        # a) Jacobian H at the linearisation point
+        H = meas_model.jacobian(pred, **kwargs)
+        # b) Nonlinear h(x) at the predicted state
+        h = meas_model.function(pred, **kwargs).reshape(-1,1)
+
+        # 4) Actual measurement and noise
+        Z = meas.state_vector.reshape(-1,1)
+        R = meas_model.covar(**kwargs)
+
+        # 5) ID‐Kalman update
+        k = getattr(self, '_step_count', 0)
+        u_post, V_post, B_post = mupdate(
+            k, Z, u_prior, B_prior, V_prior, R, H, h=h
+        )
+
+        # 6) Back to covariance form
+        P_post = inf_to_cov(V_post, B_post, u_post.size)
+
+        # 7) Package into Update
+        update = Update.from_state(
+            pred,
+            u_post.flatten(),
+            P_post,
+            timestamp=meas.timestamp,
+            hypothesis=hypothesis
+        )
+        update.B = B_post
+        update.V = V_post
+
+        # 8) Increment step count
+        self._step_count = k + 1
+
+        return update
 
 
 class UnscentedKalmanUpdater(KalmanUpdater):
