@@ -14,7 +14,7 @@ from ..base import Property
 from .base import Updater
 from ..types.array import CovarianceMatrix, StateVector
 from ..types.prediction import MeasurementPrediction
-from ..types.update import Update
+from ..types.update import Update, GaussianStateUpdate
 from ..models.base import LinearModel
 from ..models.measurement.linear import LinearGaussian
 from ..models.measurement import MeasurementModel
@@ -195,7 +195,7 @@ class KalmanUpdater(Updater):
         : numpy.ndarray
             The Kalman gain, :math:`K = P_{k|k-1} H_k^T S^{-1}`
 
-        """
+        
         if self.use_joseph_cov:
             # Identity matrix
             id_matrix = np.identity(hypothesis.prediction.ndim)
@@ -230,6 +230,38 @@ class KalmanUpdater(Updater):
                 hypothesis.measurement_prediction.covar @ kalman_gain.T
 
         return post_cov.view(CovarianceMatrix), kalman_gain
+        """
+        pred = hypothesis.prediction
+        x_prior = pred.state_vector.reshape(-1, 1)
+        print('Hi')
+        print(pred.covar)
+        B_prior, V_prior, _ = cov_to_inf(pred.covar, x_prior.shape[0])
+        print(B_prior)
+        print(V_prior)
+        if B_prior is None or V_prior is None:
+            raise ValueError("cov_to_inf returned None. Check covariance matrix format.")
+        # Measurement info
+        meas = hypothesis.measurement
+        Z = meas.state_vector.reshape(-1, 1)
+        H = meas.measurement_model.matrix()
+        R = meas.measurement_model.covar()
+
+        # Optional nonlinear measurement h(x) (if any)
+        h = None  # or: h = meas.measurement_model.function(pred)
+
+        # Use mupdate to compute everything
+        u_post, V_post, B_post, K, P_post = mupdate(
+            k=0,  # or actual time index if available
+            Z=Z,
+            u=x_prior,
+            B_or_sigma=B_prior,
+            V=V_prior,
+            R=R,
+            H=H,
+            h=h
+        )   
+        return P_post.view(CovarianceMatrix), K
+
 
     @lru_cache()
     def predict_measurement(self, predicted_state, measurement_model=None, measurement_noise=True,
@@ -270,12 +302,9 @@ class KalmanUpdater(Updater):
         meas_cross_cov = self._measurement_cross_covariance(predicted_state, hh)
         innov_cov = self._innovation_covariance(
             meas_cross_cov, hh, measurement_model, measurement_noise, **kwargs)
-
-        # 2) convert the measurement‐noise covariance R → ID form
-        #    R is meas_mod.covar(**kwargs), and p = dimension of measurement
-        p = innov_cov.shape[0]
-        B_meas, V_meas, _ = cov_to_inf(innov_cov, p)
-
+        
+        n = innov_cov.shape[0]
+        B, V, _ = cov_to_inf(innov_cov, n)
         # 3) build the base MeasurementPrediction
         pred_meas = MeasurementPrediction.from_state(
             predicted_state,
@@ -283,8 +312,8 @@ class KalmanUpdater(Updater):
             innov_cov,
             cross_covar=meas_cross_cov
         )
-        pred_meas.B = B_meas
-        pred_meas.V = V_meas
+        pred_meas.B = B
+        pred_meas.V = V
         return pred_meas
 
     def update(self, hypothesis, **kwargs):
@@ -311,15 +340,18 @@ class KalmanUpdater(Updater):
         # 1. Get the predicted state out of the hypothesis
         pred = hypothesis.prediction
         meas = hypothesis.measurement
+        if meas.state_vector is None:
+            # Return just the prediction, don't update
+            return pred
         Z = meas.state_vector.reshape(-1, 1)
 
         # 2) Pull out (u_prior, B_prior, V_prior)
-        u_prior = pred.state_vector.reshape(-1, 1)
+        x_prior = pred.state_vector.reshape(-1, 1)
         if hasattr(pred, 'B') and hasattr(pred, 'V'):
             B_prior, V_prior = pred.B, pred.V
         else:
             # fall back to converting covariance
-            n = u_prior.shape[0]
+            n = x_prior.shape[0]
             B_prior, V_prior, _ = cov_to_inf(pred.covar, n)
 
         # 3) Get H and R from the measurement model
@@ -331,26 +363,23 @@ class KalmanUpdater(Updater):
         #    Note: you need a time‐index k; if you don't track k, just pass 0 for first-call,
         #    or maintain a counter in your updater instance.
         k = getattr(self, '_step_count', 0)
-        u_post, V_post, B_post = mupdate(k, Z, u_prior, B_prior, V_prior, R, H)
+        x_post, V_post, B_post, _, _ = mupdate(k, Z, x_prior, B_prior, V_prior, R, H)
 
          # 5) Convert back to classical covariance if Stone-Soup needs it
-        P_post = inf_to_cov(V_post, B_post, u_post.size)
+        P_post = inf_to_cov(V_post, B_post, x_post.size)
 
         # 6) Build and return the Update object
         update = Update.from_state(
             hypothesis.prediction,
-            u_post.flatten(),               # posterior mean
+            x_post.flatten(),               # posterior mean
             P_post,                         # posterior covar
             timestamp=meas.timestamp,
             hypothesis=hypothesis
         )
-        # 7) Attach your ID form to the Update
-        update.B = B_post
-        update.V = V_post
-
-        # 8) bump your step counter
+        # 7) bump your step counter
         self._step_count = k + 1
-
+        pred.B = B_post
+        pred.V = V_post
         return update
 
         """
@@ -452,13 +481,21 @@ class ExtendedKalmanUpdater(KalmanUpdater):
         # 3) Nonlinear measurement model
         meas_model = meas.measurement_model or self.measurement_model
         # a) Jacobian H at the linearisation point
-        H = meas_model.jacobian(pred, **kwargs)
+        # compute dt once
+        dt = (meas.timestamp - pred.timestamp) if (meas.timestamp and pred.timestamp) else None
+
+        H = self._measurement_matrix(
+            predicted_state=pred,
+            measurement_model=meas_model,
+            linearisation_point=pred,
+            time_interval=dt
+        )   
         # b) Nonlinear h(x) at the predicted state
-        h = meas_model.function(pred, **kwargs).reshape(-1,1)
+        h = meas_model.function(pred).reshape(-1, 1)
 
         # 4) Actual measurement and noise
         Z = meas.state_vector.reshape(-1,1)
-        R = meas_model.covar(**kwargs)
+        R = meas_model.covar()
 
         # 5) ID‐Kalman update
         k = getattr(self, '_step_count', 0)
@@ -470,15 +507,15 @@ class ExtendedKalmanUpdater(KalmanUpdater):
         P_post = inf_to_cov(V_post, B_post, u_post.size)
 
         # 7) Package into Update
-        update = Update.from_state(
+        update = GaussianStateUpdate.from_state(
             pred,
             u_post.flatten(),
             P_post,
             timestamp=meas.timestamp,
-            hypothesis=hypothesis
         )
         update.B = B_post
         update.V = V_post
+        update.hypothesis = hypothesis
 
         # 8) Increment step count
         self._step_count = k + 1

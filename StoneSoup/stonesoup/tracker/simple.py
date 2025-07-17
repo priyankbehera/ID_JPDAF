@@ -2,6 +2,7 @@ import datetime
 
 import numpy as np
 
+from stonesoup.types.multihypothesis import MultipleHypothesis
 from .base import Tracker, _TrackerMixInNext
 from ..base import Property
 from ..dataassociator import DataAssociator
@@ -14,6 +15,23 @@ from ..types.prediction import GaussianStatePrediction
 from ..types.track import Track
 from ..types.update import GaussianStateUpdate
 from ..updater import Updater
+
+def best_single_hypothesis(hypothesis):
+    from stonesoup.types.multihypothesis import MultipleHypothesis
+    # Pick best non-missed-detection hypothesis by probability/weight
+    if isinstance(hypothesis, MultipleHypothesis):
+        real_hyps = [
+            h for h in hypothesis.single_hypotheses
+            if not getattr(h.measurement, 'is_missed_detection', False)
+        ]
+        if real_hyps:
+            return max(real_hyps, key=lambda h: getattr(h, 'probability', getattr(h, 'weight', 0)))
+        else:
+            return max(
+                hypothesis.single_hypotheses,
+                key=lambda h: getattr(h, 'probability', getattr(h, 'weight', 0))
+            )
+    return hypothesis
 
 
 class SingleTargetTracker(_TrackerMixInNext, Tracker):
@@ -209,9 +227,14 @@ class MultiTargetTracker(_TrackerMixInNext, Tracker):
         associated_detections = set()
         for track, hypothesis in associations.items():
             if hypothesis:
-                state_post = self.updater.update(hypothesis)
-                track.append(state_post)
-                associated_detections.add(hypothesis.measurement)
+                hypothesis = best_single_hypothesis(hypothesis)
+
+                if getattr(hypothesis, "measurement", None) is None or getattr(hypothesis, "measurement_prediction", None) is None:
+                    track.append(hypothesis.prediction)
+                else:
+                    state_post = self.updater.update(hypothesis)
+                    track.append(state_post)
+                    associated_detections.add(hypothesis.measurement)
             else:
                 track.append(hypothesis.prediction)
 

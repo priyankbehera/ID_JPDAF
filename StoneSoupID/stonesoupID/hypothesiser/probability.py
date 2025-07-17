@@ -16,7 +16,7 @@ from ..types.numeric import Probability
 from ..predictor import Predictor
 from ..updater import Updater
 
-
+# Influence Diagram PDA Hypothesiser
 class PDAHypothesiser(Hypothesiser):
     """Hypothesiser based on Probabilistic Data Association (PDA)
 

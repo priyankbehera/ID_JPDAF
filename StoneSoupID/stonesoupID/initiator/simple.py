@@ -20,6 +20,8 @@ from ..types.update import ParticleStateUpdate, Update, \
     GaussianMixtureUpdate, ASDGaussianStateUpdate, EnsembleStateUpdate
 from ..updater import Updater
 from ..updater.kalman import ExtendedKalmanUpdater
+from ..types.multihypothesis import MultipleHypothesis
+from stonesoup.types.detection import MissedDetection
 
 
 class SinglePointInitiator(GaussianInitiator):
@@ -291,9 +293,32 @@ class MultiMeasurementInitiator(GaussianInitiator):
 
             for track, hypothesis in associations.items():
                 if hypothesis:
-                    state_post = self.updater.update(hypothesis)
-                    track.append(state_post)
-                    associated_detections.add(hypothesis.measurement)
+                    # ---- PATCH START ----
+                    if type(hypothesis) is MultipleHypothesis:
+                        # Only consider hypotheses that are NOT MissedDetection
+                        real_hyps = [ h for h in hypothesis.single_hypotheses if not getattr(h.measurement, 'is_missed_detection', False)
+                        ]
+                        if real_hyps:
+                            best_hyp = max(real_hyps, key=lambda h: getattr(h, 'probability', getattr(h, 'weight', 0)))
+                        else:
+                        # Fallback: all are MissedDetection, just take the original max (should be rare)
+                            best_hyp = max(
+                            hypothesis.single_hypotheses,
+                            key=lambda h: getattr(h, 'probability', getattr(h, 'weight', 0))
+                        )
+                        hypothesis = best_hyp
+
+                    else:
+                        print("Doesn't have those attributes")
+                    # ---- PATCH END ----
+                    if isinstance(hypothesis.measurement, MissedDetection):
+                    # Append prediction only, no update possible
+                        track.append(hypothesis.prediction)
+                    else:
+                        state_post = self.updater.update(hypothesis)
+                        track.append(state_post)
+                        associated_detections.add(hypothesis.measurement)
+
                 else:
                     track.append(hypothesis.prediction)
 

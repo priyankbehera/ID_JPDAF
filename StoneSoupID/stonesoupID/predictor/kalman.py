@@ -12,7 +12,7 @@ from ..types.array import CovarianceMatrix, StateVector
 from .base import Predictor
 from ._utils import predict_lru_cache
 from ..base import Property
-from ..types.prediction import Prediction, SqrtGaussianStatePrediction
+from ..types.prediction import Prediction, SqrtGaussianStatePrediction, GaussianStatePrediction
 from ..models.base import LinearModel
 from ..models.transition import TransitionModel
 from ..models.transition.linear import LinearGaussianTransitionModel
@@ -191,12 +191,9 @@ class KalmanPredictor(Predictor):
             state covariance :math:`P_{k|k-1}`
 
         """
-        # 1. predict mean
+        # 1. prediction interval
         predict_interval = (timestamp - prior.timestamp) if timestamp and prior.timestamp else None
-        x_pred = (
-            self.transition_model.matrix(time_interval=predict_interval, **kwargs) @ prior.state_vector
-            + self.control_model.function(control_input, time_interval=predict_interval, **kwargs)
-        )
+        
         # 2. convert to ID form 
         X = prior.covar
         n = X.shape[0]
@@ -211,9 +208,9 @@ class KalmanPredictor(Predictor):
         # Assuming gamma is just identity matrix for simplicity
         gamma = np.eye(n, r)
         # 3. Run tupdate
-        x_pred, B_pred, V_pred = tupdate(x_pred, B, V, F, gamma, Q)
+        x_pred, B_pred, V_pred = tupdate(prior.state_vector, B, V, F, gamma, Q)
         
-        # 4. Convert back to covariance (TODO: Remove or not?)
+        # 4. Convert back to covariance
         P_pred = inf_to_cov(V_pred, B_pred, n)
         # 5. build prediction object and attach ID params
         pred = Prediction.from_state(
@@ -222,8 +219,6 @@ class KalmanPredictor(Predictor):
             transition_model=self.transition_model,
             prior=prior,
         )
-        pred.B = B_pred
-        pred.V = V_pred
         return pred
 
 
@@ -330,13 +325,12 @@ class ExtendedKalmanPredictor(KalmanPredictor):
         x_pred = (np.asarray(f) + np.asarray(b)).reshape((-1, 1))
 
         # 4) Jacobians for ID-update:
-        #    a) F = ∂f/∂x
+        #    a) F
         F = self.transition_model.jacobian(prior, **kwargs)
-        #    b) Γ = ∂b/∂u   and process noise Q
-        Gamma = ( self.control_model.jacobian(control_input, **kwargs)
-                  if not isinstance(self.control_model, LinearModel)
-                  else self.control_model.matrix(**kwargs) )
+        #    b) Γ and process noise Q
         Q = self.transition_model.covar(**kwargs)
+        n = Q.shape[0]
+        Gamma = np.eye(n)
 
         # 5) influence-diagram transition update
         x_pred, B_pred, V_pred = tupdate(
@@ -352,14 +346,15 @@ class ExtendedKalmanPredictor(KalmanPredictor):
         P_pred = inf_to_cov(V_pred, B_pred, n)
 
         # 7) wrap in a Prediction object
-        pred = Prediction.from_state(
+        pred = GaussianStatePrediction.from_state(
             prior,
             x_pred.flatten(),
             P_pred,
             timestamp=timestamp,
-            transition_model=self.transition_model,
-            control_input=control_input
+            
         )
+        pred.transition_model=self.transition_model,
+        pred.control_input=control_input
         pred.B = B_pred
         pred.V = V_pred
 

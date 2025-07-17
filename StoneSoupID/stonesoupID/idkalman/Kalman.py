@@ -29,11 +29,15 @@ def kalman(k, Z, u, X, V, R, H, Phi, gamma, Qk, Form, h=None):
     # Get dimensions
     domain = X.shape[0]
     
+    # Innovation 
+    S = H @ X @ H.T + R
     # Perform measurement update
-    u, V, B = mupdate(k, Z, u, X, V, R, H, h)
+    u, V, B, K, P1 = mupdate(k, Z, u, X, V, R, H, h)
     u_new = u[:domain]
     V_new = V[:domain]
     B_new = B[:domain, :domain]
+
+    u1 = u_new
 
     # Perform time update
     u, B, V = tupdate(u_new, B_new, V_new, Phi, gamma, Qk)
@@ -42,5 +46,5 @@ def kalman(k, Z, u, X, V, R, H, Phi, gamma, Qk, Form, h=None):
     if Form == 1:
         B = inf_to_cov(V, B, domain)
 
-    return u, B, V
+    return u, B, V, K, S, P1, u1
 

@@ -66,12 +66,13 @@ def mupdate(k, Z, u, B_or_sigma, V, R, H, h=None):
 
 
     # Update using Evidence function
-    u, B, V = evidence(u_new, B_new, V_new, X1, n0, n1, n2, du)
+    u, B, V, K = evidence(u_new, B_new, V_new, X1, n0, n1, n2, du)
 
     # Return only the relevant portions
     u = u[:n]
     B = B[:n, :n]
     V = V[:n]
 
-    return u, V, B
+    P1 = inf_to_cov(V, B, n)
+    return u, V, B, K, P1
 
