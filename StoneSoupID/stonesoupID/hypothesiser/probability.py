@@ -129,7 +129,7 @@ class PDAHypothesiser(Hypothesiser):
 
         # Common state & measurement prediction
         prior_state = track[-1]
-        prediction = self.predictor.predict(prior_state, timestamp=timestamp, **kwargs)
+        prediction = self.predictor.predict(track, timestamp=timestamp, **kwargs)
         # Missed detection hypothesis
         probability = Probability(1 - self.prob_detect*self.prob_gate)
         hypotheses.append(
